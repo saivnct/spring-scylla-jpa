@@ -3,7 +3,7 @@
 spring-scylla-jpa driver driver makes working with Scylla in go easy and less error-prone.
 It’s developed based on [Scylla Java Driver for Scylla and Apache Cassandra](https://github.com/scylladb/java-driver) with supporting ORM feature
 
-## ORM Features
+## Features
 * This Scylla Java Driver is Shard Aware and contains extensions for a tokenAwareHostPolicy. Using this policy, the driver can select a connection to a particular shard based on the shard’s token. As a result, latency is significantly reduced because there is no need to pass data between the shards.
 * Auto create table if not exists
 * Auto create index if not exists

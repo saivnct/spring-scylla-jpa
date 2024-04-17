@@ -10,6 +10,13 @@ It’s developed based on [Scylla Java Driver for Scylla and Apache Cassandra](h
 * Auto create UDT if not exists
 * Build repositories based on common Repository Data interfaces
 * Support for synchronous, and asynchronous data operations
+* Simple, Prepared, and Batch statements 
+* Asynchronous IO, parallel execution, request pipelining 
+* Connection pooling 
+* Auto node discovery 
+* Automatic reconnection 
+* Configurable load balancing and retry policies 
+* Works with any cluster size
 * Exception Translation to the familiar Spring DataAccessException hierarchy
 * Building statements with QueryBuilder's Fluent API. Use of Fluent API allows easier build of complex queries, as opposed to use of hardcoded query strings.
 

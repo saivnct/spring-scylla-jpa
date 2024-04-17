@@ -13,12 +13,6 @@ It’s developed based on [Scylla Java Driver for Scylla and Apache Cassandra](h
 * Exception Translation to the familiar Spring DataAccessException hierarchy
 * Building statements with QueryBuilder's Fluent API. Use of Fluent API allows easier build of complex queries, as opposed to use of hardcoded query strings.
 
-## Installation
-
-```bash
-    go get github.com/saivnct/gocqlx-orm@v1.0.2
-```
-
 ## Getting started
 
 Here is a quick teaser of an application using Spring Data Repositories in Java:

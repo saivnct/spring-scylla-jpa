@@ -1,5 +1,6 @@
 package com.giangbb.scylla.repository;
 
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.MappedAsyncPagingIterable;
 import com.datastax.oss.driver.api.core.PagingIterable;
@@ -28,16 +29,22 @@ public interface ScyllaRepository<T> {
     CompletionStage<MappedAsyncPagingIterable<T>> findByPartitionKeyAsync(T t);
 
     void save(T t);
+    void save(T t, ConsistencyLevel consistencyLevel);
 
     CompletionStage<Void> saveAsync(T t);
+    CompletionStage<Void> saveAsync(T t, ConsistencyLevel consistencyLevel);
 
     void saveWithTtl(T t, int ttl);
+    void saveWithTtl(T t, int ttl, ConsistencyLevel consistencyLevel);
 
     CompletionStage<Void> saveWithTtlAsync(T t, int ttl);
+    CompletionStage<Void> saveWithTtlAsync(T t, int ttl, ConsistencyLevel consistencyLevel);
 
     boolean saveIfExists(T t);
+    boolean saveIfExists(T t, ConsistencyLevel consistencyLevel);
 
     CompletionStage<Boolean> saveIfExistsAsync(T t);
+    CompletionStage<Boolean> saveIfExistsAsync(T t, ConsistencyLevel consistencyLevel);
 
     List<T> findAll();
 
@@ -46,8 +53,10 @@ public interface ScyllaRepository<T> {
     CompletionStage<MappedAsyncPagingIterable<T>> findAllAsync();
 
     void delete(T t);
+    void delete(T t, ConsistencyLevel consistencyLevel);
 
     CompletionStage<Void> deleteAsync(T t);
+    CompletionStage<Void> deleteAsync(T t, ConsistencyLevel consistencyLevel);
 
     void deleteAll();
 

@@ -1,9 +1,6 @@
 package com.giangbb.scylla.repository;
 
-import com.datastax.oss.driver.api.core.CqlIdentifier;
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.MappedAsyncPagingIterable;
-import com.datastax.oss.driver.api.core.PagingIterable;
+import com.datastax.oss.driver.api.core.*;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.core.data.TupleValue;
 import com.datastax.oss.driver.api.core.data.UdtValue;
@@ -41,17 +38,23 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
 
     protected final ScyllaEntityHelperImpl<T> scyllaEntityHelperImpl;
 
+    private SimpleStatement saveStatement_simple;
+    private SimpleStatement saveWithTtlStatement_simple;
+    private SimpleStatement saveIfExistsStatement_simple;
+    private SimpleStatement deleteStatement_simple;
 
     private PreparedStatement saveStatement;
     private PreparedStatement saveWithTtlStatement;
     private PreparedStatement saveIfExistsStatement;
+    private PreparedStatement findAllStatement;
     private PreparedStatement selectByPrimaryKeyStatement;
     private PreparedStatement selectByPartitionKeyStatement;
     private PreparedStatement countAllStatement;
     private PreparedStatement countByPartitionKeyStatement;
-    private PreparedStatement findAllStatement;
     private PreparedStatement deleteStatement;
     private PreparedStatement deleteAllStatement;
+
+
 
 
     public SimpleScyllaRepository(Class<T> tClass, ScyllaTemplate scyllaTemplate) {
@@ -75,42 +78,40 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
 
 
     private void initStatement() {
-        SimpleStatement saveStatement_simple = this.scyllaEntityHelperImpl.insert().build();
-        this.saveStatement = this.prepare(saveStatement_simple);
-
-        SimpleStatement saveWithTtlStatement_simple = this.scyllaEntityHelperImpl.insert().usingTtl(QueryBuilder.bindMarker(bindMarker_TTL)).build();
-        this.saveWithTtlStatement = this.prepare(saveWithTtlStatement_simple);
-
+        this.saveStatement_simple = this.scyllaEntityHelperImpl.insert().build();
+        this.saveWithTtlStatement_simple = this.scyllaEntityHelperImpl.insert().usingTtl(QueryBuilder.bindMarker(bindMarker_TTL)).build();
         //update by primkey
-        SimpleStatement saveIfExistsStatement_simple = SimpleStatement.newInstance((this.scyllaEntityHelperImpl.updateByPrimaryKey()).ifExists().asCql());
-        this.saveIfExistsStatement = this.prepare(saveIfExistsStatement_simple);
-
-        SimpleStatement findAllStatement_simple = this.scyllaEntityHelperImpl.selectStart().build();
-        this.findAllStatement = this.prepare(findAllStatement_simple);
-
+        this.saveIfExistsStatement_simple = SimpleStatement.newInstance((this.scyllaEntityHelperImpl.updateByPrimaryKey()).ifExists().asCql());
         //delete by primkey
-        SimpleStatement deleteStatement_simple = this.scyllaEntityHelperImpl.deleteByPrimaryKey().build();
-        this.deleteStatement = this.prepare(deleteStatement_simple);
-
-
+        this.deleteStatement_simple = this.scyllaEntityHelperImpl.deleteByPrimaryKey().build();
         SimpleStatement deleteAllStatement_simple = this.scyllaEntityHelperImpl.deleteAll().build();
-        this.deleteAllStatement = this.prepare(deleteAllStatement_simple);
-
+        SimpleStatement findAllStatement_simple = this.scyllaEntityHelperImpl.selectStart().build();
         SimpleStatement selectByPrimaryKeyStatement_simple = this.scyllaEntityHelperImpl.selectByPrimaryKey().build();
-        this.selectByPrimaryKeyStatement = this.prepare(selectByPrimaryKeyStatement_simple);
-
         SimpleStatement selectByPartitionKeyStatement_simple = this.scyllaEntityHelperImpl.selectByPartitionKey().build();
-        this.selectByPartitionKeyStatement = this.prepare(selectByPartitionKeyStatement_simple);
-
         SimpleStatement countAllStatement_simple = this.scyllaEntityHelperImpl.selectCountStart().build();
-        this.countAllStatement = this.prepare(countAllStatement_simple);
-
         SimpleStatement countByPartitionKeyStatement_simple = this.scyllaEntityHelperImpl.selectCountByPartitionKey().build();
-        this.countByPartitionKeyStatement = this.prepare(countByPartitionKeyStatement_simple);
 
+
+        this.saveStatement = this.prepare(saveStatement_simple);
+        this.saveWithTtlStatement = this.prepare(saveWithTtlStatement_simple);
+        this.saveIfExistsStatement = this.prepare(saveIfExistsStatement_simple);
+        this.deleteStatement = this.prepare(deleteStatement_simple);
+        this.deleteAllStatement = this.prepare(deleteAllStatement_simple);
+        this.findAllStatement = this.prepare(findAllStatement_simple);
+        this.selectByPrimaryKeyStatement = this.prepare(selectByPrimaryKeyStatement_simple);
+        this.selectByPartitionKeyStatement = this.prepare(selectByPartitionKeyStatement_simple);
+        this.countAllStatement = this.prepare(countAllStatement_simple);
+        this.countByPartitionKeyStatement = this.prepare(countByPartitionKeyStatement_simple);
     }
 
     protected PreparedStatement prepare(SimpleStatement simpleStatement){
+        return this.prepare(simpleStatement, null);
+    }
+
+    protected PreparedStatement prepare(SimpleStatement simpleStatement, ConsistencyLevel consistencyLevel){
+        if (consistencyLevel != null){
+            return this.getCqlSession().prepare(simpleStatement.setConsistencyLevel(consistencyLevel));
+        }
         return this.getCqlSession().prepare(simpleStatement);
     }
 
@@ -129,7 +130,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         this.scyllaConverter.write(u, udtValue, this.scyllaConverter.getMappingContext().getRequiredPersistentEntity(u.getClass()));
         return udtValue;
     }
-
 
     protected <U> TupleValue marshallTupleValue(String columnName, U u){
         ScyllaPersistentProperty property = this.findScyllaPersistentProperty(columnName, u);
@@ -160,24 +160,39 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
 
     @Override
     public void save(T t) {
-        this.execute(this.bindSaveStatement(t));
+        this.save(t, null);
+    }
+
+    @Override
+    public void save(T t, ConsistencyLevel consistencyLevel){
+        this.execute(this.bindSaveStatement(t, consistencyLevel));
     }
 
     @Override
     public CompletionStage<Void> saveAsync(T t) {
+       return this.saveAsync(t, null);
+    }
+
+    @Override
+    public CompletionStage<Void> saveAsync(T t, ConsistencyLevel consistencyLevel){
         try {
-            return this.executeAsyncAndMapToVoid(this.bindSaveStatement(t));
+            return this.executeAsyncAndMapToVoid(this.bindSaveStatement(t, consistencyLevel));
         } catch (Exception e) {
             return CompletableFutures.failedFuture(e);
         }
     }
 
-    private BoundStatement bindSaveStatement(T t){
+    private BoundStatement bindSaveStatement(T t, ConsistencyLevel consistencyLevel){
         Map<CqlIdentifier, Object> object = new LinkedHashMap<>();
         this.scyllaConverter.write(t, object, this.scyllaEntityHelperImpl.getPersistentEntity());
         Object[] values = object.values().toArray();
+
+        if (consistencyLevel == null) {
 //        logger.info("save entity - {} \nvalues: {} \nobj: {}", this.saveStatement.getQuery(), values, object);
-        return this.saveStatement.bind(values);
+            return this.saveStatement.bind(values);
+        }else{
+            return this.prepare(this.saveStatement_simple, consistencyLevel).bind(values);
+        }
     }
 
 
@@ -187,7 +202,12 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
      */
     @Override
     public void saveWithTtl(T t, int ttl) {
-        this.execute(this.bindSaveWithTtlStatement(t, ttl));
+        this.saveWithTtl(t, ttl, null);
+    }
+
+    @Override
+    public void saveWithTtl(T t, int ttl, ConsistencyLevel consistencyLevel){
+        this.execute(this.bindSaveWithTtlStatement(t, ttl, consistencyLevel));
     }
 
     /**
@@ -196,8 +216,13 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
      */
     @Override
     public CompletionStage<Void> saveWithTtlAsync(T t, int ttl) {
+        return this.saveWithTtlAsync(t, ttl, null);
+    }
+
+    @Override
+    public CompletionStage<Void> saveWithTtlAsync(T t, int ttl, ConsistencyLevel consistencyLevel){
         try {
-            return this.executeAsyncAndMapToVoid(this.bindSaveWithTtlStatement(t, ttl));
+            return this.executeAsyncAndMapToVoid(this.bindSaveWithTtlStatement(t, ttl, consistencyLevel));
         } catch (Exception e) {
             return CompletableFutures.failedFuture(e);
         }
@@ -207,33 +232,49 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
      * @param t - entity.
      * @param ttl - time to live in second.
      */
-    private BoundStatement bindSaveWithTtlStatement(T t, int ttl){
+    private BoundStatement bindSaveWithTtlStatement(T t, int ttl, ConsistencyLevel consistencyLevel){
         Map<CqlIdentifier, Object> object = new LinkedHashMap<>();
         this.scyllaConverter.write(t, object, this.scyllaEntityHelperImpl.getPersistentEntity());
 
         object.put(CqlIdentifier.fromCql(bindMarker_TTL), ttl);
 
         Object[] values = object.values().toArray();
-//        logger.info("saveWithTtl entity - {} - {}", this.saveWithTtlStatement.getQuery(), values);
-        return this.saveWithTtlStatement.bind(values);
+
+        if (consistencyLevel == null){
+            //        logger.info("saveWithTtl entity - {} - {}", this.saveWithTtlStatement.getQuery(), values);
+            return this.saveWithTtlStatement.bind(values);
+        }else{
+            return this.prepare(this.saveWithTtlStatement_simple, consistencyLevel).bind(values);
+        }
+
     }
 
 
     @Override
     public boolean saveIfExists(T t) {
-        return this.executeAndMapWasAppliedToBoolean(this.bindSaveIfExistsStatement(t));
+        return this.saveIfExists(t, null);
+    }
+
+    @Override
+    public boolean saveIfExists(T t, ConsistencyLevel consistencyLevel){
+        return this.executeAndMapWasAppliedToBoolean(this.bindSaveIfExistsStatement(t, consistencyLevel));
     }
 
     @Override
     public CompletionStage<Boolean> saveIfExistsAsync(T t) {
+        return this.saveIfExistsAsync(t, null);
+    }
+
+    @Override
+    public CompletionStage<Boolean> saveIfExistsAsync(T t, ConsistencyLevel consistencyLevel){
         try {
-            return this.executeAsyncAndMapWasAppliedToBoolean(this.bindSaveIfExistsStatement(t));
+            return this.executeAsyncAndMapWasAppliedToBoolean(this.bindSaveIfExistsStatement(t, consistencyLevel));
         } catch (Exception e) {
             return CompletableFutures.failedFuture(e);
         }
     }
 
-    private BoundStatement bindSaveIfExistsStatement(T t){
+    private BoundStatement bindSaveIfExistsStatement(T t, ConsistencyLevel consistencyLevel){
         Map<CqlIdentifier, Object> object = new LinkedHashMap<>();
         this.scyllaConverter.write(t, object, this.scyllaEntityHelperImpl.getPersistentEntity());
 
@@ -246,8 +287,14 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
             }
         }
         Object[] values = object.values().toArray();
+
+        if (consistencyLevel == null){
 //        logger.info("saveIfExistsAsync entity - {} - {}", this.saveIfExistsStatement.getQuery(), values);
-        return this.saveIfExistsStatement.bind(values);
+            return this.saveIfExistsStatement.bind(values);
+        }else{
+            return this.prepare(this.saveIfExistsStatement_simple, consistencyLevel).bind(values);
+        }
+
     }
 
 
@@ -431,19 +478,29 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
 
     @Override
     public void delete(T t) {
-        this.execute(this.bindDeleteStatement(t));
+        this.delete(t, null);
+    }
+
+    @Override
+    public void delete(T t, ConsistencyLevel consistencyLevel){
+        this.execute(this.bindDeleteStatement(t, consistencyLevel));
     }
 
     @Override
     public CompletionStage<Void> deleteAsync(T t) {
+      return  this.deleteAsync(t, null);
+    }
+
+    @Override
+    public CompletionStage<Void> deleteAsync(T t, ConsistencyLevel consistencyLevel){
         try {
-            return this.executeAsyncAndMapToVoid(this.bindDeleteStatement(t));
+            return this.executeAsyncAndMapToVoid(this.bindDeleteStatement(t, consistencyLevel));
         } catch (Exception e) {
             return CompletableFutures.failedFuture(e);
         }
     }
 
-    private BoundStatement bindDeleteStatement(T t){
+    private BoundStatement bindDeleteStatement(T t, ConsistencyLevel consistencyLevel){
         Map<CqlIdentifier, Object> object = new LinkedHashMap<>();
         this.scyllaConverter.write(t, object, this.scyllaEntityHelperImpl.getPersistentEntity());
 
@@ -461,8 +518,12 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         }
 
         Object[] values = object.values().toArray();
+        if (consistencyLevel == null){
 //        logger.info("deleteStatement entity - {} - {}", this.deleteStatement.getQuery(), values);
-        return this.deleteStatement.bind(values);
+            return this.deleteStatement.bind(values);
+        }else{
+            return this.prepare(this.deleteStatement_simple, consistencyLevel).bind(values);
+        }
     }
 
 

@@ -28,6 +28,14 @@ public interface ScyllaRepository<T> {
     PagingIterable<T> findByPartitionKeyPagingIterable(T t);
     CompletionStage<MappedAsyncPagingIterable<T>> findByPartitionKeyAsync(T t);
 
+    void saveAll(List<T> tList);
+    void saveAll(List<T> tList, ConsistencyLevel consistencyLevel);
+
+    CompletionStage<Void> saveAllAsync(List<T> tList);
+    CompletionStage<Void> saveAllAsync(List<T> tList, ConsistencyLevel consistencyLevel);
+
+
+
     void save(T t);
     void save(T t, ConsistencyLevel consistencyLevel);
 

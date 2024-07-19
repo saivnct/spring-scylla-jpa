@@ -43,6 +43,7 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
     private SimpleStatement saveIfExistsStatement_simple;
     private SimpleStatement deleteStatement_simple;
 
+
     private PreparedStatement saveStatement;
     private PreparedStatement saveWithTtlStatement;
     private PreparedStatement saveIfExistsStatement;
@@ -90,7 +91,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         SimpleStatement selectByPartitionKeyStatement_simple = this.scyllaEntityHelperImpl.selectByPartitionKey().build();
         SimpleStatement countAllStatement_simple = this.scyllaEntityHelperImpl.selectCountStart().build();
         SimpleStatement countByPartitionKeyStatement_simple = this.scyllaEntityHelperImpl.selectCountByPartitionKey().build();
-
 
         this.saveStatement = this.prepare(saveStatement_simple);
         this.saveWithTtlStatement = this.prepare(saveWithTtlStatement_simple);
@@ -157,6 +157,50 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         return null;
     }
 
+    @Override
+    public void saveAll(List<T> tList){
+        // A given batch can contain at most 65536 statements. Past this limit, addition methods throw an IllegalStateException.
+        // simple statements with named parameters are currently not supported in batches
+        if (tList.size() > 65536) throw new IllegalStateException("A given batch can contain at most 65536 statements");
+
+        this.saveAll(tList, null);
+    }
+
+    @Override
+    public void saveAll(List<T> tList, ConsistencyLevel consistencyLevel){
+        if (tList.size() > 65536) throw new IllegalStateException("A given batch can contain at most 65536 statements");
+
+        BatchStatementBuilder builder = BatchStatement.builder(DefaultBatchType.LOGGED);
+        for(T t : tList){
+            builder.addStatement(this.bindSaveStatement(t, consistencyLevel));
+        }
+
+        BatchStatement batch = builder.build();
+        this.execute(batch);
+    }
+
+    @Override
+    public CompletionStage<Void> saveAllAsync(List<T> tList){
+        return this.saveAllAsync(tList, null);
+    }
+
+    @Override
+    public CompletionStage<Void> saveAllAsync(List<T> tList, ConsistencyLevel consistencyLevel){
+        try {
+            if (tList.size() > 65536) throw new IllegalStateException("A given batch can contain at most 65536 statements");
+
+            BatchStatementBuilder builder = BatchStatement.builder(DefaultBatchType.LOGGED);
+            for(T t : tList){
+                builder.addStatement(this.bindSaveStatement(t, consistencyLevel));
+            }
+
+            BatchStatement batch = builder.build();
+
+            return this.executeAsyncAndMapToVoid(batch);
+        } catch (Exception e) {
+            return CompletableFutures.failedFuture(e);
+        }
+    }
 
     @Override
     public void save(T t) {

@@ -20,7 +20,7 @@ import org.springframework.core.io.support.EncodedResource;
 /**
  * Thrown by {@link ScriptUtils} if a statement in an CQL script failed when executing it against the target database.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 @SuppressWarnings("serial")

@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Collection of {@link KeyspaceActionSpecification}s. Wraps none, one or multiple keyspace actions (creates, drops).
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 2.0
  */
 public final class KeyspaceActions {

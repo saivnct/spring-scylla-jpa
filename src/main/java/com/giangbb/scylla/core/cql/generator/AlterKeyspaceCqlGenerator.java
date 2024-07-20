@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * CQL generator for generating {@code ALTER TABLE} statements.
  *
- * @author Matthew T. Adams
+ * @author Giangbb
  */
 public class AlterKeyspaceCqlGenerator extends KeyspaceOptionsCqlGenerator<AlterKeyspaceSpecification> {
 

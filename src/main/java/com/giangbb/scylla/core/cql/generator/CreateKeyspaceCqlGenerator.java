@@ -25,8 +25,7 @@ import java.util.Map;
 /**
  * CQL generator for generating a {@code CREATE TABLE} statement.
  *
- * @author Matthew T. Adams
- * @author Alex Shvid
+ * @author Giangbb
  */
 public class CreateKeyspaceCqlGenerator extends KeyspaceOptionsCqlGenerator<CreateKeyspaceSpecification> {
 

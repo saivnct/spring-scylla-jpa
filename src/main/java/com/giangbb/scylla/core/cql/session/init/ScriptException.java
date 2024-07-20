@@ -21,7 +21,7 @@ import org.springframework.lang.Nullable;
 /**
  * Root of the hierarchy of data access exceptions that are related to processing of CQL scripts.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 @SuppressWarnings("serial")

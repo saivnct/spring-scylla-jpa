@@ -36,7 +36,7 @@ import java.util.List;
  * <li>Call {@link #populate} or {@link #execute} to initialize or clean up the database using the configured scripts.
  * </ul>
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  * @see ScriptUtils
  */

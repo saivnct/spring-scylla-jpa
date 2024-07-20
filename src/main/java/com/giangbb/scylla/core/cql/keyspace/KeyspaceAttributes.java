@@ -23,9 +23,7 @@ import java.util.Map;
 /**
  * Keyspace attributes.
  *
- * @author Alex Shvid
- * @author Matthew T. Adams
- * @author Mark Paluch
+ * @author Giangbb
  */
 public class KeyspaceAttributes {
 

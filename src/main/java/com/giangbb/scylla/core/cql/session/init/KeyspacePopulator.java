@@ -20,7 +20,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 /**
  * Strategy used to populate, initialize, or clean up a Cassandra keyspace.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  * @see ResourceKeyspacePopulator
  */

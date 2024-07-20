@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Base class that contains behavior common to CQL generation for table operations.
  *
- * @author Matthew T. Adams
+ * @author Giangbb
  * @param <T> the subtype of this class for which this is a CQL generator.
  */
 public abstract class KeyspaceOptionsCqlGenerator<T extends KeyspaceOptionsSpecification<T>>

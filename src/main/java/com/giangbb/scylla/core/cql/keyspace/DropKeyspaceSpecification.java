@@ -22,7 +22,7 @@ import org.springframework.lang.Nullable;
 /**
  * Object to configure a {@code DROP KEYSPACE} specification.
  *
- * @author Mark Paluch
+ * @author Giangbb
  */
 public class DropKeyspaceSpecification extends KeyspaceActionSpecification {
 

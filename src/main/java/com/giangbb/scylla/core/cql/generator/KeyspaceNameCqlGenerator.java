@@ -22,7 +22,7 @@ import org.springframework.util.Assert;
  * Base class for Keyspace CQL generators.
  *
  * @param <T> subtype of {@link KeyspaceActionSpecification}.
- * @author Mark Paluch
+ * @author Giangbb
  */
 public abstract class KeyspaceNameCqlGenerator<T extends KeyspaceActionSpecification> {
 

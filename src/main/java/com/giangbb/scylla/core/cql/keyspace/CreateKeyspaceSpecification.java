@@ -24,7 +24,7 @@ import org.springframework.lang.Nullable;
 /**
  * Object to configure a {@code CREATE KEYSPACE} specification.
  *
- * @author Mark Paluch
+ * @author Giangbb
  */
 public class CreateKeyspaceSpecification extends KeyspaceOptionsSpecification<CreateKeyspaceSpecification>
 		implements KeyspaceDescriptor {

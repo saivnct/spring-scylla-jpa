@@ -23,8 +23,7 @@ import org.springframework.util.ObjectUtils;
 /**
  * Base value object to support the construction of keyspace specifications.
  *
- * @author John McPeek
- * @author David Webb
+ * @author Giangbb
  */
 public abstract class KeyspaceActionSpecification {
 

@@ -20,7 +20,7 @@ import com.giangbb.scylla.core.cql.keyspace.DropKeyspaceSpecification;
 /**
  * CQL generator for generating a {@code DROP TABLE} statement.
  *
- * @author Matthew T. Adams
+ * @author Giangbb
  */
 public class DropKeyspaceCqlGenerator extends KeyspaceNameCqlGenerator<DropKeyspaceSpecification> {
 

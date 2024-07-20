@@ -35,7 +35,7 @@ import static com.giangbb.scylla.core.cql.keyspace.CqlStringUtils.*;
  * {@link #with(String, Object, boolean, boolean)}. This design allows the API to support new Cassandra options as they
  * are introduced without having to update the code immediately.
  *
- * @author John McPeek
+ * @author Giangbb
  * @param <T> the subtype of the {@link KeyspaceOptionsSpecification}.
  */
 public abstract class KeyspaceOptionsSpecification<T extends KeyspaceOptionsSpecification<T>>

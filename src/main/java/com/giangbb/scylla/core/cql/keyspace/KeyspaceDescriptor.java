@@ -22,8 +22,7 @@ import java.util.Map;
 /**
  * Describes a Keyspace.
  *
- * @author John McPeek
- * @author Mark Paluch
+ * @author Giangbb
  */
 public interface KeyspaceDescriptor {
 

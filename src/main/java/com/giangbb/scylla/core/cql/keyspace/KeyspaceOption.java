@@ -74,7 +74,7 @@ public enum KeyspaceOption implements Option {
 	/**
 	 * Known Replication Strategy options.
 	 *
-	 * @author John McPeek
+	 * @author Giangbb
 	 */
 	public enum ReplicationStrategy {
 		SIMPLE_STRATEGY("SimpleStrategy"), NETWORK_TOPOLOGY_STRATEGY("NetworkTopologyStrategy");

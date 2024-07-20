@@ -20,7 +20,7 @@ import org.springframework.core.io.support.EncodedResource;
 /**
  * Thrown by {@link ScriptUtils} if a CQL script cannot be read.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 @SuppressWarnings("serial")

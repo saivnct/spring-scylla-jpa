@@ -21,7 +21,7 @@ import org.springframework.lang.Nullable;
 /**
  * Thrown by {@link ScriptUtils} if a CQL script cannot be properly parsed.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 @SuppressWarnings("serial")

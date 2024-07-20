@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  *
  * @see #toCql()
  * @see #toString()
- * @author Matthew T. Adams
+ * @author Giangbb
  * @deprecated since 3.0, use {@link CqlIdentifier}.
  */
 @Deprecated

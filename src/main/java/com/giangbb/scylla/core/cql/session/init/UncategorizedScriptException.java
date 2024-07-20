@@ -19,7 +19,7 @@ package com.giangbb.scylla.core.cql.session.init;
  * Thrown when we cannot determine anything more specific than "something went wrong while processing a CQL script": for
  * example, a {@link Exception} from Cassandra that we cannot pinpoint more precisely.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 @SuppressWarnings("serial")

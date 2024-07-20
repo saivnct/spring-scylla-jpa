@@ -36,7 +36,7 @@ import java.util.List;
  * <p>
  * Mainly for internal use within the framework.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 3.0
  */
 public abstract class ScriptUtils {

@@ -33,8 +33,7 @@ import java.util.Set;
  * inspects the action required to satisfy the keyspace element, and then returns a Set of atomic
  * {@link KeyspaceActionSpecification} required to satisfy the configuration action.
  *
- * @author David Webb
- * @author Mark Paluch
+ * @author Giangbb
  */
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public class KeyspaceActionSpecificationFactoryBean implements FactoryBean<KeyspaceActions>, InitializingBean {

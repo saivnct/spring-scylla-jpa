@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Factory to create {@link CreateKeyspaceSpecification} and {@link DropKeyspaceSpecification}.
  *
- * @author Mark Paluch
+ * @author Giangbb
  * @since 2.0
  */
 class KeyspaceActionSpecificationFactory {

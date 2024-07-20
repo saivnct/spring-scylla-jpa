@@ -20,7 +20,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier;
 /**
  * Object to configure a {@code ALTER KEYSPACE} specification.
  *
- * @author Mark Paluch
+ * @author Giangbb
  */
 public class AlterKeyspaceSpecification extends KeyspaceOptionsSpecification<AlterKeyspaceSpecification> {
 

@@ -1,0 +1,41 @@
+/*
+ * Copyright 2013-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.giangbb.scylla.core.cql.generator;
+
+import com.giangbb.scylla.core.cql.keyspace.DropKeyspaceSpecification;
+
+/**
+ * CQL generator for generating a {@code DROP TABLE} statement.
+ *
+ * @author Giangbb
+ */
+public class DropKeyspaceCqlGenerator extends KeyspaceNameCqlGenerator<DropKeyspaceSpecification> {
+
+	public static String toCql(DropKeyspaceSpecification specification) {
+		return new DropKeyspaceCqlGenerator(specification).toCql();
+	}
+
+	public DropKeyspaceCqlGenerator(DropKeyspaceSpecification specification) {
+		super(specification);
+	}
+
+	@Override
+	public StringBuilder toCql(StringBuilder cql) {
+		return cql.append("DROP KEYSPACE ").append(spec().getIfExists() ? "IF EXISTS " : "")
+				.append(spec().getName().asCql(true))
+				.append(";");
+	}
+}

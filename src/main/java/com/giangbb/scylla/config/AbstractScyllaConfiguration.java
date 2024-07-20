@@ -34,6 +34,7 @@ import com.giangbb.scylla.core.mapping.ScyllaMappingContext;
 import com.giangbb.scylla.core.mapping.SimpleUserTypeResolver;
 import com.giangbb.scylla.core.mapping.Table;
 import com.giangbb.scylla.core.mapping.UserTypeResolver;
+import com.giangbb.scylla.core.cql.session.init.KeyspacePopulator;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -218,6 +219,31 @@ public abstract class AbstractScyllaConfiguration
 	public SchemaAction getSchemaAction() {
 		return SchemaAction.NONE;
 	}
+
+
+	/**
+	 * Creates a {@link KeyspacePopulator} to cleanup the keyspace.
+	 *
+	 * @return the {@link KeyspacePopulator} or {@code null} if none configured.
+	 * @see com.giangbb.scylla.core.cql.session.init.ResourceKeyspacePopulator
+	 */
+	@Nullable
+	protected KeyspacePopulator keyspaceCleaner() {
+		return null;
+	}
+
+	/**
+	 * Creates a {@link KeyspacePopulator} to initialize the keyspace.
+	 *
+	 * @return the {@link KeyspacePopulator} or {@code null} if none configured.
+	 * @see com.giangbb.scylla.core.cql.session.init.ResourceKeyspacePopulator
+	 */
+	@Nullable
+	protected KeyspacePopulator keyspacePopulator() {
+		return null;
+	}
+	
+	
 
 	/**
 	 * Creates a new {@link UserTypeResolver} from the given {@link CqlSession}. Uses by default the configured

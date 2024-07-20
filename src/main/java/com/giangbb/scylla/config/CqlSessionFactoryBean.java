@@ -18,6 +18,13 @@ package com.giangbb.scylla.config;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
+import com.giangbb.scylla.core.cql.generator.AlterKeyspaceCqlGenerator;
+import com.giangbb.scylla.core.cql.generator.CreateKeyspaceCqlGenerator;
+import com.giangbb.scylla.core.cql.generator.DropKeyspaceCqlGenerator;
+import com.giangbb.scylla.core.cql.keyspace.AlterKeyspaceSpecification;
+import com.giangbb.scylla.core.cql.keyspace.CreateKeyspaceSpecification;
+import com.giangbb.scylla.core.cql.keyspace.DropKeyspaceSpecification;
+import com.giangbb.scylla.core.cql.keyspace.KeyspaceActionSpecification;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -27,15 +34,15 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import com.giangbb.scylla.core.convert.ScyllaConverter;
 import com.giangbb.scylla.core.cql.ScyllaExceptionTranslator;
 import com.giangbb.scylla.core.mapping.ScyllaMappingContext;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -65,6 +72,17 @@ public class CqlSessionFactoryBean
 
 	private @Nullable CqlSession session;
 	private @Nullable CqlSession systemSession;
+
+	private List<KeyspaceActions> keyspaceActions = new ArrayList<>();
+
+	private List<AlterKeyspaceSpecification> keyspaceAlterations = new ArrayList<>();
+	private List<CreateKeyspaceSpecification> keyspaceCreations = new ArrayList<>();
+	private List<DropKeyspaceSpecification> keyspaceDrops = new ArrayList<>();
+
+	private List<String> keyspaceStartupScripts = new ArrayList<>();
+	private List<String> keyspaceShutdownScripts = new ArrayList<>();
+
+	private Set<KeyspaceActionSpecification> keyspaceSpecifications = new HashSet<>();
 
 
 	private boolean suspendLifecycleSchemaRefresh = false;
@@ -182,6 +200,57 @@ public class CqlSessionFactoryBean
 		return this.converter;
 	}
 
+	/**
+	 * Set a {@link List} of {@link KeyspaceActions} to be executed on initialization. Keyspace actions may contain create
+	 * and drop specifications.
+	 *
+	 * @param keyspaceActions the {@link List} of {@link KeyspaceActions}.
+	 */
+	public void setKeyspaceActions(List<KeyspaceActions> keyspaceActions) {
+		this.keyspaceActions = new ArrayList<>(keyspaceActions);
+	}
+
+	/**
+	 * @return the {@link List} of {@link KeyspaceActions}.
+	 */
+	public List<KeyspaceActions> getKeyspaceActions() {
+		return Collections.unmodifiableList(this.keyspaceActions);
+	}
+
+	/**
+	 * Set a {@link List} of {@link AlterKeyspaceSpecification alter keyspace specifications} that are executed when this
+	 * factory is {@link #afterPropertiesSet() initialized}. {@link AlterKeyspaceSpecification Alter keyspace
+	 * specifications} are executed on a system session with no keyspace set
+	 *
+	 * @param specifications the {@link List} of {@link CreateKeyspaceSpecification create keyspace specifications}.
+	 */
+	public void setKeyspaceAlterations(List<AlterKeyspaceSpecification> specifications) {
+		this.keyspaceAlterations = new ArrayList<>(specifications);
+	}
+
+	/**
+	 * Set a {@link List} of {@link CreateKeyspaceSpecification create keyspace specifications} that are executed when
+	 * this factory is {@link #afterPropertiesSet() initialized}. {@link CreateKeyspaceSpecification Create keyspace
+	 * specifications} are executed on a system session with no keyspace set
+	 *
+	 * @param specifications the {@link List} of {@link CreateKeyspaceSpecification create keyspace specifications}.
+	 */
+	public void setKeyspaceCreations(List<CreateKeyspaceSpecification> specifications) {
+		this.keyspaceCreations = new ArrayList<>(specifications);
+	}
+
+	/**
+	 * Set a {@link List} of {@link DropKeyspaceSpecification drop keyspace specifications} that are executed when this
+	 * factory is {@link #destroy() destroyed}. {@link DropKeyspaceSpecification Drop keyspace specifications} are
+	 * executed on a system session with no keyspace set
+	 *
+	 * @param specifications the {@link List} of {@link DropKeyspaceSpecification drop keyspace specifications}.
+	 */
+	public void setKeyspaceDrops(List<DropKeyspaceSpecification> specifications) {
+		this.keyspaceDrops = new ArrayList<>(specifications);
+	}
+
+
 
 	/**
 	 * Sets the name of the Scylla Keyspace to connect to. Passing {@literal null} will cause the Scylla System
@@ -205,6 +274,41 @@ public class CqlSessionFactoryBean
 		return this.keyspaceName;
 	}
 
+	/**
+	 * @param keyspaceSpecifications The {@link KeyspaceActionSpecification} to set.
+	 */
+	public void setKeyspaceSpecifications(List<? extends KeyspaceActionSpecification> keyspaceSpecifications) {
+		this.keyspaceSpecifications = new LinkedHashSet<>(keyspaceSpecifications);
+	}
+
+	/**
+	 * @return the {@link KeyspaceActionSpecification} associated with this factory.
+	 */
+	public Set<KeyspaceActionSpecification> getKeyspaceSpecifications() {
+		return Collections.unmodifiableSet(this.keyspaceSpecifications);
+	}
+
+	/**
+	 * Set a {@link List} of raw {@link String CQL statements} that are executed in the scope of the system keyspace when
+	 * this factory is {@link #afterPropertiesSet() initialized}. Scripts are executed on a system session with no
+	 * keyspace set, after executing {@link #setKeyspaceCreations(List)}.
+	 *
+	 * @param scripts the scripts to execute on startup
+	 */
+	public void setKeyspaceStartupScripts(List<String> scripts) {
+		this.keyspaceStartupScripts = new ArrayList<>(scripts);
+	}
+
+	/**
+	 * Set a {@link List} of raw {@link String CQL statements} that are executed in the scope of the system keyspace when
+	 * this factory is {@link #destroy() destroyed}. {@link DropKeyspaceSpecification Drop keyspace specifications} are
+	 * executed on a system session with no keyspace set, after executing {@link #setKeyspaceDrops(List)}.
+	 *
+	 * @param scripts the scripts to execute on shutdown
+	 */
+	public void setKeyspaceShutdownScripts(List<String> scripts) {
+		this.keyspaceShutdownScripts = new ArrayList<>(scripts);
+	}
 
 	/**
 	 * @return the {@link ScyllaMappingContext}.
@@ -350,8 +454,16 @@ public class CqlSessionFactoryBean
 	}
 
 	private void initializeCluster(CqlSession session) {
+		generateSpecificationsFromFactoryBeanDeclarations();
+
+		List<KeyspaceActionSpecification> keyspaceStartupSpecifications = new ArrayList<>(
+				this.keyspaceCreations.size() + this.keyspaceAlterations.size());
+
+		keyspaceStartupSpecifications.addAll(this.keyspaceCreations);
+		keyspaceStartupSpecifications.addAll(this.keyspaceAlterations);
+
 		Runnable schemaActionRunnable = () -> {
-			// no-op
+			executeSpecificationsAndScripts(keyspaceStartupSpecifications, this.keyspaceStartupScripts, session);
 		};
 
 		if (this.suspendLifecycleSchemaRefresh) {
@@ -362,7 +474,29 @@ public class CqlSessionFactoryBean
 	}
 
 
+	/**
+	 * Evaluates the contents of all the {@link KeyspaceActionSpecificationFactoryBean}s and generates the proper
+	 * {@link KeyspaceActionSpecification}s from them.
+	 */
+	private void generateSpecificationsFromFactoryBeanDeclarations() {
 
+		generateSpecifications(this.keyspaceSpecifications);
+		this.keyspaceActions.forEach(actions -> generateSpecifications(actions.getActions()));
+	}
+
+	private void generateSpecifications(Collection<KeyspaceActionSpecification> specifications) {
+
+		specifications.forEach(specification -> {
+
+			if (specification instanceof AlterKeyspaceSpecification) {
+				this.keyspaceAlterations.add((AlterKeyspaceSpecification) specification);
+			} else if (specification instanceof CreateKeyspaceSpecification) {
+				this.keyspaceCreations.add((CreateKeyspaceSpecification) specification);
+			} else if (specification instanceof DropKeyspaceSpecification) {
+				this.keyspaceDrops.add((DropKeyspaceSpecification) specification);
+			}
+		});
+	}
 
 	@Override
 	public CqlSession getObject() {
@@ -390,7 +524,7 @@ public class CqlSessionFactoryBean
 			};
 
 			Runnable systemSchemaActionRunnable = () -> {
-				//no-op
+				executeSpecificationsAndScripts(this.keyspaceDrops, this.keyspaceShutdownScripts, this.systemSession);
 			};
 
 			if (this.suspendLifecycleSchemaRefresh) {
@@ -420,6 +554,20 @@ public class CqlSessionFactoryBean
 		this.systemSession.close();
 	}
 
+	private void executeSpecificationsAndScripts(List<? extends KeyspaceActionSpecification> keyspaceActionSpecifications,
+												 List<String> keyspaceCqlScripts, CqlSession session) {
+
+		if (!CollectionUtils.isEmpty(keyspaceActionSpecifications) || !CollectionUtils.isEmpty(keyspaceCqlScripts)) {
+
+			Stream<String> keyspaceActionSpecificationsStream = keyspaceActionSpecifications.stream()
+					.map(CqlSessionFactoryBean::toCql);
+			Stream<String> keyspaceCqlScriptsStream = keyspaceCqlScripts.stream();
+			Stream<String> cql = Stream.concat(keyspaceActionSpecificationsStream, keyspaceCqlScriptsStream);
+
+			executeCql(cql, session);
+		}
+	}
+
 	/**
 	 * Executes the given, raw Scylla CQL scripts. The {@link CqlSession} must be connected when this method is called.
 	 *
@@ -435,6 +583,26 @@ public class CqlSessionFactoryBean
 		});
 	}
 
+	/**
+	 * Converts the {@link KeyspaceActionSpecification} to {@link String CQL}.
+	 *
+	 * @param specification {@link KeyspaceActionSpecification} to convert to {@link String CQL}.
+	 * @return a {@link String} containing the CQL for the given {@link KeyspaceActionSpecification}.
+	 * @see com.giangbb.scylla.core.cql.keyspace.KeyspaceActionSpecification
+	 */
+	private static String toCql(KeyspaceActionSpecification specification) {
+
+		if (specification instanceof AlterKeyspaceSpecification) {
+			return new AlterKeyspaceCqlGenerator((AlterKeyspaceSpecification) specification).toCql();
+		} else if (specification instanceof CreateKeyspaceSpecification) {
+			return new CreateKeyspaceCqlGenerator((CreateKeyspaceSpecification) specification).toCql();
+		} else if (specification instanceof DropKeyspaceSpecification) {
+			return new DropKeyspaceCqlGenerator((DropKeyspaceSpecification) specification).toCql();
+		}
+
+		throw new IllegalArgumentException(
+				String.format("Unsupported specification type: %s", ClassUtils.getQualifiedName(specification.getClass())));
+	}
 
 	private static Collection<InetSocketAddress> createInetSocketAddresses(String contactPoints, int defaultPort) {
 

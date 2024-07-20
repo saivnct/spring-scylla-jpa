@@ -19,6 +19,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.type.codec.ExtraTypeCodecs;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
+import com.giangbb.scylla.core.cql.session.init.KeyspacePopulator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
@@ -49,6 +50,9 @@ public class SessionFactoryFactoryBean extends AbstractFactoryBean<SessionFactor
 
 	private CqlSession session;
 
+	private @Nullable KeyspacePopulator keyspaceCleaner;
+	private @Nullable KeyspacePopulator keyspacePopulator;
+
 	private SchemaFactory schemaFactory;
 
 
@@ -77,6 +81,30 @@ public class SessionFactoryFactoryBean extends AbstractFactoryBean<SessionFactor
 		this.converter = converter;
 
 		this.schemaFactory = new SchemaFactory(converter);
+	}
+
+
+	/**
+	 * Set the {@link KeyspacePopulator} to execute during the bean destruction phase, cleaning up the keyspace and
+	 * leaving it in a known state for others.
+	 *
+	 * @param keyspaceCleaner the {@link KeyspacePopulator} to use during cleanup.
+	 * @see #setKeyspacePopulator
+	 */
+	public void setKeyspaceCleaner(@Nullable KeyspacePopulator keyspaceCleaner) {
+		this.keyspaceCleaner = keyspaceCleaner;
+	}
+
+	/**
+	 * Set the {@link KeyspacePopulator} to execute during the bean initialization phase. The
+	 * {@link KeyspacePopulator#populate(CqlSession) KeyspacePopulator} is invoked before creating
+	 * {@link #setSchemaAction(SchemaAction) the schema}.
+	 *
+	 * @param keyspacePopulator the {@link KeyspacePopulator} to use during initialization.
+	 * @see #setKeyspaceCleaner
+	 */
+	public void setKeyspacePopulator(@Nullable KeyspacePopulator keyspacePopulator) {
+		this.keyspacePopulator = keyspacePopulator;
 	}
 
 	/**
@@ -130,6 +158,10 @@ public class SessionFactoryFactoryBean extends AbstractFactoryBean<SessionFactor
 		super.afterPropertiesSet();
 
 		Runnable schemaActionRunnable = () -> {
+			if (this.keyspacePopulator != null) {
+				this.keyspacePopulator.populate(this.session);
+			}
+
 			performSchemaAction();
 		};
 
@@ -150,7 +182,9 @@ public class SessionFactoryFactoryBean extends AbstractFactoryBean<SessionFactor
 	public void destroy() throws Exception {
 
 		Runnable schemaActionRunnable = () -> {
-			// no-op
+			if (this.keyspaceCleaner != null) {
+				this.keyspaceCleaner.populate(this.session);
+			}
 		};
 
 		if (suspendLifecycleSchemaRefresh) {

@@ -21,6 +21,8 @@ import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
+import com.giangbb.scylla.core.cql.keyspace.CreateKeyspaceSpecification;
+import com.giangbb.scylla.core.cql.keyspace.DropKeyspaceSpecification;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.logging.Log;
@@ -43,7 +45,9 @@ import com.giangbb.scylla.core.cql.session.DefaultSessionFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -237,6 +241,25 @@ public abstract class AbstractSessionConfiguration implements BeanFactoryAware {
 	}
 
 	/**
+	 * Returns the list of keyspace creations to be run right after initialization.
+	 *
+	 * @return the list of keyspace creations, may be empty but never {@code null}.
+	 */
+	protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Returns the list of keyspace drops to be run before shutdown.
+	 *
+	 * @return the list of keyspace drops, may be empty but never {@code null}.
+	 */
+	protected List<DropKeyspaceSpecification> getKeyspaceDrops() {
+		return Collections.emptyList();
+	}
+
+
+	/**
 	 * Creates a {@link CqlSessionFactoryBean} that provides a Scylla {@link CqlSession}.
 	 *
 	 * @return the {@link CqlSessionFactoryBean}.
@@ -246,6 +269,8 @@ public abstract class AbstractSessionConfiguration implements BeanFactoryAware {
 	public CqlSessionFactoryBean scyllaSession() {
 		CqlSessionFactoryBean bean = new CqlSessionFactoryBean();
 		bean.setContactPoints(getContactPoints());
+		bean.setKeyspaceCreations(getKeyspaceCreations());
+		bean.setKeyspaceDrops(getKeyspaceDrops());
 		bean.setKeyspaceName(getKeyspaceName());
 		bean.setLocalDatacenter(getLocalDataCenter());
 		bean.setPort(getPort());

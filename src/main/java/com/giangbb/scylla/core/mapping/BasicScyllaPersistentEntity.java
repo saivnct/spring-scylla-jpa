@@ -18,8 +18,6 @@ package com.giangbb.scylla.core.mapping;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.entity.naming.NamingConvention;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -49,7 +47,6 @@ import java.util.function.BiFunction;
  */
 public class BasicScyllaPersistentEntity<T> extends BasicPersistentEntity<T, ScyllaPersistentProperty>
 		implements ScyllaPersistentEntity<T>, ApplicationContextAware {
-	private final Logger logger = LoggerFactory.getLogger(BasicScyllaPersistentEntity.class);
 
 	private static final ScyllaPersistentEntityMetadataVerifier DEFAULT_VERIFIER = new CompositeScyllaPersistentEntityMetadataVerifier();
 
@@ -203,8 +200,6 @@ public class BasicScyllaPersistentEntity<T> extends BasicPersistentEntity<T, Scy
 		if (parameter.getName() == null) {
 			return null;
 		}
-
-		logger.debug("{} - Getting property for parameter {}", parameter.getName(), this.getTableName());
 
 		MergedAnnotations annotations = parameter.getAnnotations();
 		if (annotations.isPresent(StaticColumn.class) || annotations.isPresent(Element.class)) {

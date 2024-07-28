@@ -8,15 +8,13 @@ import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.util.Assert;
 import com.giangbb.scylla.core.ScyllaTemplate;
 import com.giangbb.scylla.core.convert.MappingScyllaConverter;
 import com.giangbb.scylla.core.convert.ScyllaColumnType;
 import com.giangbb.scylla.core.cql.RowMapperResultSetExtractor;
 import com.giangbb.scylla.core.mapping.MapId;
 import com.giangbb.scylla.core.mapping.ScyllaPersistentProperty;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +26,6 @@ import java.util.stream.Stream;
  * Created by Giangbb on 04/03/2024
  */
 public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
-    protected final Log logger = LogFactory.getLog(getClass());
 
     public static final String bindMarker_TTL = "ttl";
 
@@ -232,7 +229,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         Object[] values = object.values().toArray();
 
         if (consistencyLevel == null) {
-//        logger.info("save entity - {} \nvalues: {} \nobj: {}", this.saveStatement.getQuery(), values, object);
             return this.saveStatement.bind(values);
         }else{
             return this.prepare(this.saveStatement_simple, consistencyLevel).bind(values);
@@ -285,7 +281,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         Object[] values = object.values().toArray();
 
         if (consistencyLevel == null){
-            //        logger.info("saveWithTtl entity - {} - {}", this.saveWithTtlStatement.getQuery(), values);
             return this.saveWithTtlStatement.bind(values);
         }else{
             return this.prepare(this.saveWithTtlStatement_simple, consistencyLevel).bind(values);
@@ -333,7 +328,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         Object[] values = object.values().toArray();
 
         if (consistencyLevel == null){
-//        logger.info("saveIfExistsAsync entity - {} - {}", this.saveIfExistsStatement.getQuery(), values);
             return this.saveIfExistsStatement.bind(values);
         }else{
             return this.prepare(this.saveIfExistsStatement_simple, consistencyLevel).bind(values);
@@ -368,7 +362,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         });
 
         Object[] values = object.values().toArray();
-//        logger.info("Select By PrimaryKey entity - {} - {}", this.selectByPrimaryKeyStatement.getQuery(), values);
         return this.selectByPrimaryKeyStatement.bind(values);
     }
 
@@ -403,10 +396,8 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
             });
 
             Object[] values = object.values().toArray();
-//            logger.info("Select By PrimaryKey MapId entity - {} - {} - map object {}", this.selectByPrimaryKeyStatement.getQuery(), values, object);
             return this.selectByPrimaryKeyStatement.bind(values);
         }else{
-//            logger.info("Select By PrimaryKey object entity - {} - {}", this.selectByPrimaryKeyStatement.getQuery(), entityPrimaryKey);
             return this.selectByPrimaryKeyStatement.bind(entityPrimaryKey);
         }
     }
@@ -443,7 +434,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         });
 
         Object[] values = object.values().toArray();
-//        logger.info("Select By PartitionKey entity - {} - {}", this.selectByPartitionKeyStatement.getQuery(), values);
         return this.selectByPartitionKeyStatement.bind(values);
     }
 
@@ -485,10 +475,8 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
             });
 
             Object[] values = object.values().toArray();
-//            logger.info("Select By PartitionKey MapId entity - {} - {} - map object {}", this.selectByPartitionKeyStatement.getQuery(), values, object);
             return this.selectByPartitionKeyStatement.bind(values);
         }else{
-//            logger.info("Select By PartitionKey object entity - {} - {}", this.selectByPartitionKeyStatement.getQuery(), entityPrimaryKey);
             return this.selectByPartitionKeyStatement.bind(entityPrimaryKey);
         }
     }
@@ -563,7 +551,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
 
         Object[] values = object.values().toArray();
         if (consistencyLevel == null){
-//        logger.info("deleteStatement entity - {} - {}", this.deleteStatement.getQuery(), values);
             return this.deleteStatement.bind(values);
         }else{
             return this.prepare(this.deleteStatement_simple, consistencyLevel).bind(values);
@@ -625,7 +612,6 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
         });
 
         Object[] values = object.values().toArray();
-//        logger.info("Count By PartitionKey entity - {} - {}", this.countByPartitionKeyStatement.getQuery(), values);
         return this.countByPartitionKeyStatement.bind(values);
     }
 
@@ -663,10 +649,8 @@ public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
             });
 
             Object[] values = object.values().toArray();
-//            logger.info("Count By PartitionKey MapId entity - {} - {} - map object {}", this.countByPartitionKeyStatement.getQuery(), values, object);
             return this.countByPartitionKeyStatement.bind(values);
         }else{
-//            logger.info("Count By PartitionKey object entity - {} - {}", this.countByPartitionKeyStatement.getQuery(), entityPrimaryKey);
             return this.countByPartitionKeyStatement.bind(entityPrimaryKey);
         }
     }

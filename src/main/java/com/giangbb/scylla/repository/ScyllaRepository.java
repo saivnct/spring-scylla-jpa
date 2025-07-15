@@ -31,10 +31,14 @@ public interface ScyllaRepository<T> {
     void saveAll(List<T> tList);
     void saveAll(List<T> tList, ConsistencyLevel consistencyLevel);
 
+    void saveAllWithTtl(List<T> tList, int ttl);
+    void saveAllWithTtl(List<T> tList, int ttl, ConsistencyLevel consistencyLevel);
+
     CompletionStage<Void> saveAllAsync(List<T> tList);
     CompletionStage<Void> saveAllAsync(List<T> tList, ConsistencyLevel consistencyLevel);
 
-
+    CompletionStage<Void> saveAllWithTtlAsync(List<T> tList, int ttl);
+    CompletionStage<Void> saveAllWithTtlAsync(List<T> tList, int ttl, ConsistencyLevel consistencyLevel);
 
     void save(T t);
     void save(T t, ConsistencyLevel consistencyLevel);

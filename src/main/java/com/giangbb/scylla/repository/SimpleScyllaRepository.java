@@ -8,15 +8,13 @@ import com.datastax.oss.driver.api.core.type.TupleType;
 import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.datastax.oss.driver.internal.core.util.concurrent.CompletableFutures;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.util.Assert;
 import com.giangbb.scylla.core.ScyllaTemplate;
 import com.giangbb.scylla.core.convert.MappingScyllaConverter;
 import com.giangbb.scylla.core.convert.ScyllaColumnType;
 import com.giangbb.scylla.core.cql.RowMapperResultSetExtractor;
 import com.giangbb.scylla.core.mapping.MapId;
 import com.giangbb.scylla.core.mapping.ScyllaPersistentProperty;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +26,6 @@ import java.util.stream.Stream;
  * Created by Giangbb on 04/03/2024
  */
 public class SimpleScyllaRepository<T> implements ScyllaRepository<T> {
-    protected final Log logger = LogFactory.getLog(getClass());
 
     public static final String bindMarker_TTL = "ttl";
 

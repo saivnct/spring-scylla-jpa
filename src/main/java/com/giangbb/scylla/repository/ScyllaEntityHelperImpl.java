@@ -17,8 +17,6 @@ import com.datastax.oss.driver.internal.querybuilder.update.DefaultUpdate;
 import com.giangbb.scylla.core.convert.ScyllaConverter;
 import com.giangbb.scylla.core.mapping.BasicScyllaPersistentEntity;
 import com.giangbb.scylla.core.mapping.ScyllaPersistentProperty;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
@@ -29,7 +27,6 @@ import java.util.Objects;
  * Created by Giangbb on 10/04/2024
  */
 public class ScyllaEntityHelperImpl<T> implements ScyllaEntityHelper<T> {
-    protected final Log logger = LogFactory.getLog(getClass());
 
     private Class<T> tClass;
     private final CqlIdentifier keyspaceId;

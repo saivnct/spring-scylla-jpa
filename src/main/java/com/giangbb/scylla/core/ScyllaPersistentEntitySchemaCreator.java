@@ -154,9 +154,9 @@ public class ScyllaPersistentEntitySchemaCreator {
 
 		createUserTypeSpecifications(ifNotExists).stream()
 				.map(createUserTypeSpecification -> {
-//					if (this.log.isInfoEnabled()) {
-//						this.log.info(String.format("CreateUserTypeSpecification for %s", createUserTypeSpecification.getName().toString()));
-//					}
+					if (this.log.isInfoEnabled()) {
+						this.log.info(String.format("CreateUserTypeSpecification for %s", createUserTypeSpecification.getName().toString()));
+					}
 					return CreateUserTypeCqlGenerator.toCql(createUserTypeSpecification);
 				})
 				.forEach(cql -> {

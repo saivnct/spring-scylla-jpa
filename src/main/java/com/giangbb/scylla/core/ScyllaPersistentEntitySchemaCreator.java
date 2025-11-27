@@ -228,6 +228,7 @@ public class ScyllaPersistentEntitySchemaCreator {
 	 * Object to record dependencies and report them in the order of creation.
 	 */
 	static class UserDefinedTypeSet{
+		protected final Log log = LogFactory.getLog(getClass());
 
 		private final Set<CqlIdentifier> seen = new HashSet<>();
 		private final List<DependencyNode> creationOrder = new ArrayList<>();
@@ -258,10 +259,17 @@ public class ScyllaPersistentEntitySchemaCreator {
 							return 1;
 						}else if (right.dependsOn(left.getIdentifier())) {
 							return -1;
-						}
-						return 0;
+						}else return Integer.compare(left.dependsOn.size(), right.dependsOn.size());
 					}) //
 					.map(DependencyNode::getIdentifier).toList();
+
+			for (CqlIdentifier cqlIdentifier : cqlIdentifiersOrdered) {
+				DependencyNode node = getDependencyNode(cqlIdentifier);
+				if (node == null) {
+					throw new IllegalStateException("DependencyNode not found after ordering List CqlIdentifiers for: " + cqlIdentifier);
+				}
+				this.log.info("UDT Creation Order: " + cqlIdentifier + " depends on " + node.dependsOn);
+			}
 
 			Set<String> seenCheck = new HashSet<>();
 			for (CqlIdentifier cqlIdentifier : cqlIdentifiersOrdered) {

@@ -176,6 +176,9 @@ public class ScyllaPersistentEntitySchemaCreator {
 	 * @return {@link List} of {@link CreateUserTypeSpecification}.
 	 */
 	public List<CreateUserTypeSpecification> createUserTypeSpecifications(boolean ifNotExists) {
+		if (this.log.isInfoEnabled()) {
+			this.log.info("Collecting createUserTypeSpecifications ...");
+		}
 
 		List<? extends ScyllaPersistentEntity<?>> entities = new ArrayList<>(
 				this.mappingContext.getUserDefinedTypeEntities());
@@ -183,7 +186,6 @@ public class ScyllaPersistentEntitySchemaCreator {
 		Map<CqlIdentifier, ScyllaPersistentEntity<?>> byTableName = entities.stream()
 				.collect(Collectors.toMap(ScyllaPersistentEntity::getTableName, entity -> entity));
 
-		List<CreateUserTypeSpecification> specifications = new ArrayList<>();
 		UserDefinedTypeSet udts = new UserDefinedTypeSet();
 
 		entities.forEach(entity -> {
@@ -191,10 +193,14 @@ public class ScyllaPersistentEntitySchemaCreator {
 			visitUserTypes(entity, udts);
 		});
 
-		specifications.addAll(udts.stream()
-				.map(identifier -> this.schemaFactory
-						.getCreateUserTypeSpecificationFor(byTableName.get(identifier)).ifNotExists(ifNotExists))
-				.collect(Collectors.toList()));
+
+		List<CqlIdentifier> orderedUdtCqlIdentifier = udts.getCreationCqlIdentifierOrdered();
+
+		List<CreateUserTypeSpecification> specifications = orderedUdtCqlIdentifier.stream().map(identifier -> this.schemaFactory.getCreateUserTypeSpecificationFor(byTableName.get(identifier)).ifNotExists(ifNotExists)).toList();
+
+		if (this.log.isInfoEnabled()) {
+			this.log.info(String.format("Collected %d createUserTypeSpecifications: %s", specifications.size(), specifications.stream().map(s -> s.getName().toString()).toList()));
+		}
 
 		return specifications;
 	}
@@ -221,7 +227,7 @@ public class ScyllaPersistentEntitySchemaCreator {
 	/**
 	 * Object to record dependencies and report them in the order of creation.
 	 */
-	static class UserDefinedTypeSet implements Streamable<CqlIdentifier> {
+	static class UserDefinedTypeSet{
 
 		private final Set<CqlIdentifier> seen = new HashSet<>();
 		private final List<DependencyNode> creationOrder = new ArrayList<>();
@@ -236,26 +242,41 @@ public class ScyllaPersistentEntitySchemaCreator {
 			return false;
 		}
 
-		@NotNull
-		@Override
-		public Iterator<CqlIdentifier> iterator() {
+		public DependencyNode getDependencyNode(CqlIdentifier cqlIdentifier){
+			for (DependencyNode node : creationOrder) {
+				if (node.matches(cqlIdentifier)) {
+					return node;
+				}
+			}
+			return null;
+		}
 
-			// Return items in creation order considering dependencies
-			return creationOrder.stream() //
+		public List<CqlIdentifier> getCreationCqlIdentifierOrdered(){
+			List<CqlIdentifier> cqlIdentifiersOrdered = creationOrder.stream() //
 					.sorted((left, right) -> {
-
 						if (left.dependsOn(right.getIdentifier())) {
 							return 1;
-						}
-
-						if (right.dependsOn(left.getIdentifier())) {
+						}else if (right.dependsOn(left.getIdentifier())) {
 							return -1;
 						}
-
 						return 0;
 					}) //
-					.map(DependencyNode::getIdentifier) //
-					.iterator();
+					.map(DependencyNode::getIdentifier).toList();
+
+			Set<String> seenCheck = new HashSet<>();
+			for (CqlIdentifier cqlIdentifier : cqlIdentifiersOrdered) {
+				DependencyNode node = getDependencyNode(cqlIdentifier);
+				if (node == null) {
+					throw new IllegalStateException("DependencyNode not found after ordering List CqlIdentifiers for: " + cqlIdentifier);
+				}
+				for (CqlIdentifier dependency : node.dependsOn) {
+					if (!seenCheck.contains(dependency.toString())) {
+						throw new IllegalStateException("Dependency ordering failed for: " + cqlIdentifier + " depends on " + dependency);
+					}
+				}
+				seenCheck.add(cqlIdentifier.toString());
+			}
+			return cqlIdentifiersOrdered;
 		}
 
 		/**

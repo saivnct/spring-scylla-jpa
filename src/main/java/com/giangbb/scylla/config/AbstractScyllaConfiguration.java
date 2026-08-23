@@ -158,7 +158,7 @@ public abstract class AbstractScyllaConfiguration
 	 *
 	 * @return must not be {@literal null}.
 	 */
-	@Bean
+	@Bean("scyllaCustomConversions")
 	public ScyllaCustomConversions customConversions() {
 		return ScyllaCustomConversions.create(config -> {});
 	}

@@ -24,38 +24,35 @@ public class PagingScyllaRepository<T> extends SimpleScyllaRepository<T> {
     }
 
     /**
-     * Paging query
+     * The offset-paging counterpart of {@code PagingScyllaRepository.findSliceWithPageAndOffset}, over
+     * a caller-supplied row mapper.
+     *
      * @param boundStatement Query statement
      * @param pageable Pageable
+     * @param mapper Function<Row, R>
      * @return PageModel with page info and content
      */
-//    protected Page<T> findWithPageAndOffset(BoundStatement boundStatement, Pageable pageable){
-//        OffsetPager pager = new OffsetPager(pageable.getPageSize());
-//
-//        ResultSet rs = execute(boundStatement);
-//        int total = rs.getAvailableWithoutFetching();
-//
-//        int totalPages = pageable.getPageSize() == 0 ? 1 : (int) Math.ceil((double) total / (double) pageable.getPageSize());
-//
-////        log.debug("Total: {}, Page: {}, Size: {}, totalPages: {}", total, pageable.getPageNumber(), pageable.getPageSize(), totalPages);
-//
-//        if (pageable.getPageNumber() >= totalPages) {
-//            return new PageImpl<>(new ArrayList<>(), pageable, total);
-//        }
-//
-//        OffsetPager.Page<Row> pageRow = pager.getPage(rs, pageable.getPageNumber() + 1);
-//
-//        final List<T> res = new ArrayList<>();
-//
-//        pageRow.getElements().forEach(row -> {
-//            T t = asEntity(row, this.getSingleRowMapper());
-//            res.add(t);
-//        });
-//
-////        log.debug("res: {}", res.size());
-//
-//        return new PageImpl<>(res, pageable, total);
-//    }
+    protected <R> Slice<R> findSliceWithPageAndOffset(BoundStatement boundStatement, Pageable pageable, Function<Row, R> mapper) {
+        //align the server page size with the logical page size
+        BoundStatement stmt = boundStatement.setPageSize(pageable.getPageSize());
+
+        ResultSet rs = this.execute(stmt);
+
+        OffsetPager pager = new OffsetPager(pageable.getPageSize());
+        OffsetPager.Page<Row> pageRow = pager.getPage(rs, pageable.getPageNumber() + 1);
+
+        List<R> content = new ArrayList<>(pageRow.getElements().size());
+        for (Row row : pageRow.getElements()) {
+            if (row != null && (row.getColumnDefinitions().size() != 1 || !row.getColumnDefinitions().get(0).getName().equals(APPLIED))){
+                R mapped = mapper.apply(row);
+                if (mapped != null) {
+                    content.add(mapped);
+                }
+            }
+        }
+
+        return new SliceImpl<>(content, pageable, !pageRow.isLast());
+    }
 
 
     /**
@@ -65,29 +62,6 @@ public class PagingScyllaRepository<T> extends SimpleScyllaRepository<T> {
      * @return PageModel with page info and content
      */
     protected Slice<T> findSliceWithPageAndOffset(BoundStatement boundStatement, Pageable pageable) {
-        // Align server page size with your logical page size
-        BoundStatement stmt = boundStatement.setPageSize(pageable.getPageSize());
-
-        ResultSet rs = execute(stmt);
-
-        OffsetPager pager = new OffsetPager(pageable.getPageSize());
-        OffsetPager.Page<Row> pageRow = pager.getPage(rs, pageable.getPageNumber() + 1);
-
-        List<T> content = new ArrayList<>(pageRow.getElements().size());
-        for (Row row : pageRow.getElements()) {
-            T t = asEntity(row, this.getSingleRowMapper());
-            if (t != null) content.add(t);
-        }
-
-        boolean hasNext = !pageRow.isLast(); // from OffsetPager
-        return new SliceImpl<>(content, pageable, hasNext);
-    }
-
-
-
-
-
-    private <EntityT> EntityT asEntity(Row row, Function<Row, EntityT> mapper) {
-        return row != null && (row.getColumnDefinitions().size() != 1 || !row.getColumnDefinitions().get(0).getName().equals(APPLIED)) ? mapper.apply(row) : null;
+        return findSliceWithPageAndOffset(boundStatement, pageable, this.getSingleRowMapper());
     }
 }
